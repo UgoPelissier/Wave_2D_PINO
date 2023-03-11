@@ -12,8 +12,8 @@ jit: false
 
 custom:
   gradient_method: exact
-  ntrain: 10
-  ntest: 2
+  ntrain: 100
+  ntest: 10
 
 arch:
   decoder:
@@ -35,7 +35,7 @@ scheduler:
 
 training:
   rec_results_freq : 1000
-  max_steps : 10000
+  max_steps : 20000
 
 loss:
   weights:
