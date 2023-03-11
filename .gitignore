@@ -1,1 +1,7 @@
-outputs/wave_2d_PINO
+outputs/
+outputs/wave_2d_PINO/constraints
+outputs/wave_2d_PINO/dataset
+outputs/wave_2d_PINO/validators
+outputs/wave_2d_PINO/fno.0.pth
+outputs/wave_2d_PINO/optim_checkpoint.0.pth
+outputs/wave_2d_PINO/events.out.tfevents.1678550288.hpcai.1191814.0
