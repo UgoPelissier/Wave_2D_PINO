@@ -36,26 +36,45 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 class Wave(torch.nn.Module):
     "Custom Wave PDE definition for PINO"
 
-    def __init__(self):
+    def __init__(self, gradient_method):
         super().__init__()
+        self.gradient_method = str(gradient_method)
+        print("Gradient method: ", self.gradient_method)
 
     def forward(self, input_var: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         # get inputs
         u = input_var["sol"]
         ic = input_var["IC"]
-        c = 1.0
+        c = 3.00e8
         
         dxf = 1.0 / u.shape[-2]
         dyf = 1.0 / u.shape[-1]
         
-        dduddx_exact = input_var["sol__x__x"]
-        dduddy_exact = input_var["sol__y__y"]
-        # compute wave equation
-        wave = (
-            1.0
-            + (c * dduddx_exact)
-            + (c * dduddy_exact)
-        )
+        if self.gradient_method == "exact":
+            dduddt_exact = input_var["sol__t__t"]
+            dduddx_exact = input_var["sol__x__x"]
+            dduddy_exact = input_var["sol__y__y"]
+            # compute wave equation
+            wave = (
+                dduddt_exact - c**2 * (dduddx_exact + dduddy_exact)
+            )
+            
+        elif self.gradient_method == "fourier":
+            dim_u_t = u.shape[1]
+            dim_u_x = u.shape[2]
+            dim_u_y = u.shape[3]
+            u = F.pad(
+                u, (0, dim_u_y - 1, 0, dim_u_x - 1), mode="reflect"
+            )  # Constant seems to give best results
+            
+            _, f_ddu = fourier_derivatives(u, [2.0, 2.0])
+            
+            dduddx_fourier = f_ddu[:, 0:1, :dim_u_x, :dim_u_y]
+            dduddy_fourier = f_ddu[:, 1:2, :dim_u_x, :dim_u_y]
+
+            wave = (
+                c**2 * (dduddx + dduddy_fourier)
+            )
 
         # Zero outer boundary
         wave = F.pad(wave[:, :, 2:-2, 2:-2], [2, 2, 2, 2], "constant", 0)
@@ -120,7 +139,7 @@ def run(cfg: ModulusConfig) -> None:
     wave_node = Node(
         inputs=inputs,
         outputs=["wave"],
-        evaluate=Wave(),
+        evaluate=Wave(gradient_method=cfg.custom.gradient_method),
         name="Wave Node",
     )
     nodes = [fno.make_node('fno'), wave_node]
