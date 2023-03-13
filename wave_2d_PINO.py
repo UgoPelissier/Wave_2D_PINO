@@ -39,24 +39,22 @@ class Wave(torch.nn.Module):
     def __init__(self, gradient_method):
         super().__init__()
         self.gradient_method = str(gradient_method)
-        print("Gradient method: ", self.gradient_method)
 
     def forward(self, input_var: Dict[str, torch.Tensor]) -> Dict[str, torch.Tensor]:
         # get inputs
         u = input_var["sol"]
         ic = input_var["IC"]
-        c = 3.00e8
+        c = 1.0
         
         dxf = 1.0 / u.shape[-2]
         dyf = 1.0 / u.shape[-1]
         
         if self.gradient_method == "exact":
-            dduddt_exact = input_var["sol__t__t"]
-            dduddx_exact = input_var["sol__x__x"]
-            dduddy_exact = input_var["sol__y__y"]
+            dduddx_fdm = input_var["sol__x__x"]
+            dduddy_fdm = input_var["sol__y__y"]
             # compute wave equation
             wave = (
-                dduddt_exact - c**2 * (dduddx_exact + dduddy_exact)
+                c**2 * (dduddx_fdm + dduddy_fdm)
             )
             
         elif self.gradient_method == "fourier":
@@ -73,8 +71,10 @@ class Wave(torch.nn.Module):
             dduddy_fourier = f_ddu[:, 1:2, :dim_u_x, :dim_u_y]
 
             wave = (
-                c**2 * (dduddx + dduddy_fourier)
+                c**2 * (dduddx_fourier + dduddy_fourier)
             )
+        else:
+            raise ValueError(f"Derivative method {self.gradient_method} not supported.")
 
         # Zero outer boundary
         wave = F.pad(wave[:, :, 2:-2, 2:-2], [2, 2, 2, 2], "constant", 0)
@@ -101,9 +101,14 @@ def run(cfg: ModulusConfig) -> None:
         Key("sol", scale=(torch.mean(outvar_train['sol']), torch.std(outvar_train['sol'])))
     ]
     
-    outvar_train['sol'] = outvar_train['sol'][:,100:,:,:]
-    outvar_test['sol'] = outvar_test['sol'][:,100:,:,:]
-    print('IC shape: ', outvar_train['sol'].shape)
+    invar_train['IC'] = np.array(invar_train['IC'])
+    invar_test['IC'] = np.array(invar_test['IC'])
+    
+    outvar_train['sol'] = np.array(outvar_train['sol'][:,100:,:,:])
+    outvar_test['sol'] = np.array(outvar_test['sol'][:,100:,:,:])
+    
+    # add additional constraining values for wave variable
+    outvar_train["wave"] = np.zeros_like(outvar_train["sol"])
 
     train_dataset = DictGridDataset(invar_train, outvar_train)
     test_dataset = DictGridDataset(invar_test, outvar_test)
@@ -124,10 +129,10 @@ def run(cfg: ModulusConfig) -> None:
         Key("sol", derivatives=[Key("x"), Key("x")]),
         Key("sol", derivatives=[Key("y"), Key("y")]),
     ]
-    # fno.add_pino_gradients(
-    #     derivatives=derivatives,
-    #     domain_length=[1.0, 1.0],
-    # )
+    fno.add_pino_gradients(
+        derivatives=derivatives,
+        domain_length=[1.0, 1.0],
+    )
     # [init-model]
 
     # [init-node]
