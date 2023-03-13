@@ -1,5 +1,5 @@
 training:
-  max_steps: 20000
+  max_steps: 30000
   grad_agg_freq: 1
   rec_results_freq: 1000
   rec_validation_freq: ${training.rec_results_freq}
@@ -55,7 +55,7 @@ arch:
     detach_keys: ???
     scaling: null
     layer_size: 32
-    nr_layers: 4
+    nr_layers: 1
     skip_connections: false
     activation_fn: silu
     adaptive_activations: false
@@ -77,8 +77,8 @@ models: ???
 loss:
   _target_: modulus.loss.aggregator.Sum
   weights:
-    sol: 0.5
-    wave: 0.5
+    sol: 1.0
+    wave: 0.1
 optimizer:
   _params_:
     compute_gradients: adam_compute_gradients
@@ -100,6 +100,6 @@ batch_size:
   grid: 8
   validation: 8
 custom:
-  gradient_method: exact
+  gradient_method: hybrid
   ntrain: 100
   ntest: 10

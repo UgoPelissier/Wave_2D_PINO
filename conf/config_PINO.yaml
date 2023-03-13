@@ -11,7 +11,7 @@ cuda_graphs: false
 jit: false
 
 custom:
-  gradient_method: exact
+  gradient_method: hybrid
   ntrain: 100
   ntest: 10
 
@@ -19,7 +19,7 @@ arch:
   decoder:
     input_keys: [z, 32]
     output_keys: sol
-    nr_layers: 4
+    nr_layers: 1
     layer_size: 32
 
   fno:
@@ -39,8 +39,8 @@ training:
 
 loss:
   weights:
-    sol: 0.5
-    wave: 0.5
+    sol: 1.0
+    wave: 0.1
 
 batch_size:
   grid: 8

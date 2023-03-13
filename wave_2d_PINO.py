@@ -21,18 +21,6 @@ from modulus.utils.io.vtk import grid_to_vtk
 from utilities import download_FNO_dataset, load_FNO_dataset
 from ops import dx, ddx
 
-dim = 2
-N = 128
-Nx = 128
-Ny = 128
-l = 0.1
-L = 1.0
-sigma = 1.0
-Nu = None
-dt = 1.0e-4
-save_int = int(1e-2/dt)
-device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
-
 class Wave(torch.nn.Module):
     "Custom Wave PDE definition for PINO"
 
@@ -49,7 +37,7 @@ class Wave(torch.nn.Module):
         dxf = 1.0 / u.shape[-2]
         dyf = 1.0 / u.shape[-1]
         
-        if self.gradient_method == "exact":
+        if self.gradient_method == "hybrid":
             dduddx_fdm = input_var["sol__x__x"]
             dduddy_fdm = input_var["sol__y__y"]
             # compute wave equation
