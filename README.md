@@ -6,6 +6,8 @@ Given a partial differential equations system, PINO allow among to approximate a
 
 This project aims at implementating a PINO solver for the 2D wave equation using Modulus.
 
+![plot](./img/train_ex.png)
+
 ## Installation
 
 - Clone this repo
@@ -45,3 +47,7 @@ mv dataset/outputs/data/outvar_test.pt outputs/wave_2d_PINO/dataset/outvar_test.
 ```
 python wave_2d_PINO.py
 ```
+
+To view the loss plots and plot comparison, in another terminal run tensorboard --logdir=outputs/wave_2d_PINO/ and click http://localhost:6006.
+
+![plot](./img/test_prediction_0.png)
